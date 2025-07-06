@@ -1,23 +1,33 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import AllInterfaz from "./pages/AllInterface";
-import SuperDashboard from "./pages/SuperDashboard";
-import RequireSuperuser from "./components/RequireSuperuser";
+import Allnterface from "./pages/Allnterface";
+import PrivateRoute from "./components/PrivateRoute";
+import RequireRole from "./components/RequiereRole";
+import AnalistaPage from "./pages/AnalistaPage";
+import SuperDashboard from "./pages/SuperDashboard"
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/all-interface" element={<AllInterfaz />} />
-        <Route element={<RequireSuperuser />}>
-          <Route path="/super-dashboard" element={<SuperDashboard />} />
-        </Route>
-      </Routes>
-    </Router>
+    <Routes>
+      <Route path="/" element={<Login />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route
+        path="/all-interface"
+        element={
+          <PrivateRoute>
+            <Allnterface />
+          </PrivateRoute>
+        }
+      />
+      <Route element={<RequireRole role="admin" />}>
+        <Route path="/super-dashboard" element={<SuperDashboard />} />
+      </Route>
+      <Route element={<RequireRole role="analista" />}>
+        <Route path="/analista" element={<AnalistaPage />} />
+      </Route>
+    </Routes>
   );
 }
 

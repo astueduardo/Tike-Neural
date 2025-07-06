@@ -1,81 +1,141 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import api from "../api/axios";
-import UserForm from "../components/UserForm";
+import "../styles/SuperDashboard.css";
+
+const user = JSON.parse(localStorage.getItem("user"));
 
 function SuperDashboard() {
     const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [showModal, setShowModal] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
-    const [creating, setCreating] = useState(false);
+    const [showCreate, setShowCreate] = useState(false);
+    const [newUser, setNewUser] = useState({ email: "", password: "", role: "admin" });
 
     useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const res = await api.get("/admin/users");
-                setUsers(res.data);
-            } catch {
-                setError("Error al cargar usuarios");
-                setUsers([]);
-            }
-            setLoading(false);
-        };
         fetchUsers();
+        // eslint-disable-next-line
     }, []);
 
-    const handleCreateUser = async (form, resetForm) => {
+    const fetchUsers = async () => {
+        setLoading(true);
         setError("");
-        setSuccess("");
-        setCreating(true);
         try {
-            const res = await api.post("/admin/users", form);
-            setUsers(prev => [...prev, res.data]);
-            setShowModal(false);
-            resetForm({ email: "", password: "", role: "user" });
-            setSuccess("Usuario creado correctamente");
+            const res = await api.get("/admin/users");
+            setUsers(res.data);
         } catch {
-            setError("Error al crear usuario");
+            setError("Error al cargar usuarios");
         }
-        setCreating(false);
+        setLoading(false);
     };
 
     const handleDeleteUser = async (userId) => {
-        if (!window.confirm("¿Seguro que deseas eliminar este usuario?")) return;
+        if (!window.confirm("¿Seguro que dees eliminar este usuario?")) return;
+        setLoading(true);
         setError("");
-        setSuccess("");
         try {
-            await api.delete(`/admin/users/${userId}`);
+            // Elimina un usuario por ID
+            await api.delete(`/users/${userId}`);
             setUsers(prev => prev.filter((u) => u.id !== userId));
             setSuccess("Usuario eliminado correctamente");
         } catch {
             setError("Error al eliminar usuario");
         }
+        setLoading(false);
+    };
+
+    const handleChangeRole = async (userId) => {
+        const newRole = window.prompt("Nuevo rol para este usuario (admin/analista):", "analista");
+        if (!["admin", "analista"].includes(newRole)) {
+            alert("Rol inválido");
+            return;
+        }
+        setLoading(true);
+        setError("");
+        try {
+            // Cambia el rol de un usuario
+            await api.put(`/users/${userId}/role`, { role: newRole });
+            setUsers(prev =>
+                prev.map(u => u.id === userId ? { ...u, role: newRole } : u)
+            );
+            setSuccess("Rol actualizado correctamente");
+        } catch {
+            setError("Error al cambiar rol");
+        }
+        setLoading(false);
+    };
+
+    const handleCreateUser = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError("");
+        try {
+            // Cambia aquí el endpoint:
+            const res = await api.post("/auth/register", newUser);
+            setUsers(prev => [...prev, res.data]);
+            setShowCreate(false);
+            setNewUser({ email: "", password: "", role: "analista" });
+            setSuccess("Usuario creado correctamente");
+        } catch {
+            setError("Error al crear usuario");
+        }
+        setLoading(false);
     };
 
     return (
         <div className="ai-main" style={{ minHeight: "100vh", padding: "2rem" }}>
-            <h2 className="ai-title text-black">Panel de Superusuario</h2>
+            <h2 className="ai-title text-black">Panel de Administración</h2>
             {error && <div style={{ color: "red" }}>{error}</div>}
             {success && <div style={{ color: "green" }}>{success}</div>}
-            <button
-                className="ai-submit-button"
-                onClick={() => setShowModal(true)}
-                disabled={loading}
-            >
-                Crear usuario/administrador
-            </button>
-            {showModal && (
-                <div className="modal-bg">
-                    <div className="modal-content">
-                        <UserForm
-                            onSubmit={handleCreateUser}
-                            onCancel={() => setShowModal(false)}
-                            loading={creating}
-                        />
-                    </div>
-                </div>
+
+            {/* Solo admin puede crear usuarios */}
+            {user.role === "admin" && (
+                <>
+                    <button
+                        className="ai-submit-button"
+                        onClick={() => setShowCreate(true)}
+                        disabled={loading}
+                    >
+                        Crear Usuario
+                    </button>
+                    {showCreate && (
+                        <form onSubmit={handleCreateUser} style={{ margin: "1rem 0" }}>
+                            <input
+                                type="email"
+                                placeholder="Email"
+                                value={newUser.email}
+                                onChange={e => setNewUser({ ...newUser, email: e.target.value })}
+                                required
+                                style={{ marginRight: 8 }}
+                            />
+                            <input
+                                type="password"
+                                placeholder="Contraseña"
+                                value={newUser.password}
+                                onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                                required
+                                style={{ marginRight: 8 }}
+                            />
+                            <select
+                                value={newUser.role}
+                                onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+                                required
+                                style={{ marginRight: 8 }}
+                            >
+                                <option value="analista">Analista</option>
+                                <option value="admin">Administrador</option>
+                            </select>
+                            <button type="submit" className="ai-submit-button" disabled={loading}>
+                                Guardar
+                            </button>
+                            <button type="button" className="ai-clear-button" onClick={() => setShowCreate(false)}>
+                                Cancelar
+                            </button>
+                        </form>
+                    )}
+                </>
             )}
+
             {loading ? (
                 <div className="ai-loading">Cargando usuarios...</div>
             ) : (
@@ -93,12 +153,27 @@ function SuperDashboard() {
                                 <td>{u.email}</td>
                                 <td>{u.role}</td>
                                 <td>
-                                    <button
-                                        className="ai-clear-button"
-                                        onClick={() => handleDeleteUser(u.id)}
-                                    >
-                                        Eliminar
-                                    </button>
+                                    {user.role === "admin" ? (
+                                        <>
+                                            <button
+                                                className="ai-clear-button"
+                                                onClick={() => handleDeleteUser(u.id)}
+                                                disabled={loading}
+                                            >
+                                                Eliminar
+                                            </button>
+                                            <button
+                                                className="ai-submit-button"
+                                                onClick={() => handleChangeRole(u.id)}
+                                                disabled={loading}
+                                                style={{ marginLeft: 8 }}
+                                            >
+                                                Cambiar Rol
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <span>Sin permisos</span>
+                                    )}
                                 </td>
                             </tr>
                         ))}
