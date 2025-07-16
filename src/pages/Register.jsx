@@ -26,7 +26,10 @@
     };
 
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+
+      <div className="min-h-screen flex items-center justify-center ">
+        <img src="/public/el.png" alt="icon" className="icon" />
+        <span className="logo">TIKÉE NEURAL </span>
         <form onSubmit={handleRegister} className="form-container">
           <h2 className="text-2xl font-bold mb-6 text-center">Crear cuenta</h2>
 

@@ -1,187 +1,428 @@
+// SuperDashboard.jsx 
 import React, { useEffect, useState } from "react";
 import api from "../api/axios";
+import { toast } from "react-toastify";
+import {
+  Users, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Shield, 
+  UserCheck, 
+  X,
+  Search, 
+  ChevronDown, 
+  Crown, 
+  Eye, 
+  EyeOff
+} from "lucide-react";
 import "../styles/SuperDashboard.css";
 
-const user = JSON.parse(localStorage.getItem("user"));
+const SuperDashboard = () => {
+  const user = JSON.parse(localStorage.getItem("user"));
+  const [users, setUsers] = useState([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [form, setForm] = useState({ 
+    name: "", 
+    email: "", 
+    password: "", 
+    role: "analista" 
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [stats, setStats] = useState({ admin: 0, analista: 0, lector: 0, total: 0 });
 
-function SuperDashboard() {
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
-    const [showCreate, setShowCreate] = useState(false);
-    const [newUser, setNewUser] = useState({ email: "", password: "", role: "admin" });
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || user.role !== "admin") {
+      toast.error("No tienes permisos para ver esta página");
+      return;
+    }
+    
+    loadStats();
+    loadUsers();
+  }, []);
 
-    useEffect(() => {
-        fetchUsers();
-        // eslint-disable-next-line
-    }, []);
+  const loadStats = async () => {
+    try {
+      const res = await api.get("/users/stats");
+      const stats = res.data.stats || {};
+      const total =
+        (stats.admin || 0) +
+        (stats.analista || 0) +
+        (stats.lector || 0);
+      setStats({ ...stats, total });
+    } catch {
+      setStats({ admin: 0, analista: 0, lector: 0, total: 0 });
+    }
+  };
 
-    const fetchUsers = async () => {
-        setLoading(true);
-        setError("");
-        try {
-            const res = await api.get("/admin/users");
-            setUsers(res.data);
-        } catch {
-            setError("Error al cargar usuarios");
-        }
-        setLoading(false);
-    };
+  const loadUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/users");
+      console.log("Respuesta del servidor:", res.data); // Para depuración
+    
+      if (res.data && Array.isArray(res.data)) {
+        setUsers(res.data);
+      } else if (res.data && Array.isArray(res.data.users)) {
+        setUsers(res.data.users);
+      } else {
+        console.error("Formato de respuesta inesperado:", res.data);
+        setUsers([]);
+      }
+    
+      // Recarga las estadísticas después de cargar usuarios
+      loadStats();
+    } catch (error) {
+      console.error("Error loading users:", error);
+      console.error("Respuesta del servidor:", error.response?.data);
+      toast.error(error.response?.data?.message || "Error al cargar usuarios");
+      setUsers([]);
+    }
+    setLoading(false);
+  };
 
-    const handleDeleteUser = async (userId) => {
-        if (!window.confirm("¿Seguro que dees eliminar este usuario?")) return;
-        setLoading(true);
-        setError("");
-        try {
-            // Elimina un usuario por ID
-            await api.delete(`/users/${userId}`);
-            setUsers(prev => prev.filter((u) => u.id !== userId));
-            setSuccess("Usuario eliminado correctamente");
-        } catch {
-            setError("Error al eliminar usuario");
-        }
-        setLoading(false);
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      if (editingUser) {
+        const data = { ...form };
+        if (!form.password) delete data.password;
+        await api.put(`/users/${editingUser.id}`, data);
+        toast.success("Usuario actualizado");
+      } else {
+        await api.post("/auth/register", form);
+        toast.success("Usuario creado");
+      }
+      setModalOpen(false);
+      setEditingUser(null);
+      resetForm();
+      loadUsers();
+    } catch (error) {
+      console.error("Error saving user:", error);
+      toast.error("Error al guardar usuario");
+    }
+    setLoading(false);
+  };
 
-    const handleChangeRole = async (userId) => {
-        const newRole = window.prompt("Nuevo rol para este usuario (admin/analista):", "analista");
-        if (!["admin", "analista"].includes(newRole)) {
-            alert("Rol inválido");
-            return;
-        }
-        setLoading(true);
-        setError("");
-        try {
-            // Cambia el rol de un usuario
-            await api.put(`/users/${userId}/role`, { role: newRole });
-            setUsers(prev =>
-                prev.map(u => u.id === userId ? { ...u, role: newRole } : u)
-            );
-            setSuccess("Rol actualizado correctamente");
-        } catch {
-            setError("Error al cambiar rol");
-        }
-        setLoading(false);
-    };
+  const resetForm = () => {
+    setForm({ name: "", email: "", password: "", role: "analista" });
+  };
 
-    const handleCreateUser = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setError("");
-        try {
-            // Cambia aquí el endpoint:
-            const res = await api.post("/auth/register", newUser);
-            setUsers(prev => [...prev, res.data]);
-            setShowCreate(false);
-            setNewUser({ email: "", password: "", role: "analista" });
-            setSuccess("Usuario creado correctamente");
-        } catch {
-            setError("Error al crear usuario");
-        }
-        setLoading(false);
-    };
+  const handleDelete = async (id) => {
+    if (!window.confirm("¿Eliminar usuario?")) return;
+    setLoading(true);
+    try {
+      await api.delete(`/users/${id}`);
+      toast.success("Usuario eliminado");
+      loadUsers();
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error("Error al eliminar usuario");
+    }
+    setLoading(false);
+  };
 
-    return (
-        <div className="ai-main" style={{ minHeight: "100vh", padding: "2rem" }}>
-            <h2 className="ai-title text-black">Panel de Administración</h2>
-            {error && <div style={{ color: "red" }}>{error}</div>}
-            {success && <div style={{ color: "green" }}>{success}</div>}
+  const handleRoleChange = async (id, newRole) => {
+    setLoading(true);
+    try {
+      await api.put(`/users/${id}/role`, { role: newRole });
+      toast.success("Rol actualizado");
+      loadUsers();
+    } catch (error) {
+      console.error("Error updating role:", error);
+      toast.error("Error al actualizar rol");
+    }
+    setLoading(false);
+  };
 
-            {/* Solo admin puede crear usuarios */}
-            {user.role === "admin" && (
-                <>
-                    <button
-                        className="ai-submit-button"
-                        onClick={() => setShowCreate(true)}
-                        disabled={loading}
-                    >
-                        Crear Usuario
-                    </button>
-                    {showCreate && (
-                        <form onSubmit={handleCreateUser} style={{ margin: "1rem 0" }}>
-                            <input
-                                type="email"
-                                placeholder="Email"
-                                value={newUser.email}
-                                onChange={e => setNewUser({ ...newUser, email: e.target.value })}
-                                required
-                                style={{ marginRight: 8 }}
-                            />
-                            <input
-                                type="password"
-                                placeholder="Contraseña"
-                                value={newUser.password}
-                                onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                                required
-                                style={{ marginRight: 8 }}
-                            />
-                            <select
-                                value={newUser.role}
-                                onChange={e => setNewUser({ ...newUser, role: e.target.value })}
-                                required
-                                style={{ marginRight: 8 }}
-                            >
-                                <option value="analista">Analista</option>
-                                <option value="admin">Administrador</option>
-                            </select>
-                            <button type="submit" className="ai-submit-button" disabled={loading}>
-                                Guardar
-                            </button>
-                            <button type="button" className="ai-clear-button" onClick={() => setShowCreate(false)}>
-                                Cancelar
-                            </button>
-                        </form>
-                    )}
-                </>
-            )}
+  const filteredUsers = (users || []).filter(u =>
+    u.email?.toLowerCase().includes(search.toLowerCase()) ||
+    u.name?.toLowerCase().includes(search.toLowerCase()) ||
+    u.role?.toLowerCase().includes(search.toLowerCase())
+  );
 
-            {loading ? (
-                <div className="ai-loading">Cargando usuarios...</div>
-            ) : (
-                <table className="w-full mt-6 bg-white rounded shadow">
-                    <thead>
-                        <tr>
-                            <th>Email</th>
-                            <th>Rol</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.map((u) => (
-                            <tr key={u.id}>
-                                <td>{u.email}</td>
-                                <td>{u.role}</td>
-                                <td>
-                                    {user.role === "admin" ? (
-                                        <>
-                                            <button
-                                                className="ai-clear-button"
-                                                onClick={() => handleDeleteUser(u.id)}
-                                                disabled={loading}
-                                            >
-                                                Eliminar
-                                            </button>
-                                            <button
-                                                className="ai-submit-button"
-                                                onClick={() => handleChangeRole(u.id)}
-                                                disabled={loading}
-                                                style={{ marginLeft: 8 }}
-                                            >
-                                                Cambiar Rol
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <span>Sin permisos</span>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
-        </div>
+  const handleEditUser = (user) => {
+    setEditingUser(user);
+    setForm({
+      name: user.name || "",
+      email: user.email || "",
+      password: "",
+      role: user.role || "analista"
+    });
+    setModalOpen(true);
+  };
+
+  const getRoleIcon = (role) => {
+    switch (role) {
+      case "admin":
+        return <Crown className="role-icon admin" />;
+      case "analista":
+        return <UserCheck className="role-icon analista" />;
+      default:
+        return <Shield className="role-icon" />;
+    }
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setEditingUser(null);
+    resetForm();
+  };
+
+  let usersTableRows;
+  if (filteredUsers && filteredUsers.length > 0) {
+    usersTableRows = filteredUsers.map((userItem) => (
+      <tr key={userItem.id}>
+        <td className="user-cell">
+          <div className="user-info">
+            <div className="user-avatar">
+              {userItem.name?.charAt(0).toUpperCase() || "?"}
+            </div>
+            <span>{userItem.name || "Sin nombre"}</span>
+          </div>
+        </td>
+        <td>{userItem.email}</td>
+        <td>
+          <div className="role-cell">
+            {getRoleIcon(userItem.role)}
+            <select
+              value={userItem.role}
+              onChange={(e) => handleRoleChange(userItem.id, e.target.value)}
+              className="role-select"
+              disabled={loading}
+            >
+              <option value="analista">Analista</option>
+              <option value="admin">Administrador</option>
+            </select>
+            <ChevronDown className="select-icon" />
+          </div>
+        </td>
+        <td>
+          <div className="actions-cell">
+            <button
+              className="btn-action edit"
+              onClick={() => handleEditUser(userItem)}
+              disabled={loading}
+              title="Editar usuario"
+            >
+              <Edit />
+            </button>
+            <button
+              className="btn-action delete"
+              onClick={() => handleDelete(userItem.id)}
+              disabled={loading}
+              title="Eliminar usuario"
+            >
+              <Trash2 />
+            </button>
+          </div>
+        </td>
+      </tr>
+    ));
+  } else {
+    usersTableRows = (
+      <tr>
+        <td colSpan="4" className="empty-cell">
+          {search ? "No se encontraron usuarios" : "No hay usuarios registrados"}
+        </td>
+      </tr>
     );
-}
+  }
+
+  return (
+    <div className="dashboard-container">
+      <header className="dashboard-header">
+        <div className="header-title">
+          <Users />
+          <h1>Panel de Administración</h1>
+        </div>
+        <div className="header-actions">
+          <div className="search-container">
+            <Search className="search-icon" />
+            <input
+              className="search-input"
+              placeholder="Buscar..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          {user?.role === "admin" && (
+            <button
+              className="btn-primary"
+              onClick={() => {
+                setModalOpen(true);
+                setEditingUser(null);
+                resetForm();
+              }}
+            >
+              <Plus /> Nuevo Usuario
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* Statistics Section */}
+      <div className="stats-container">
+        <div className="stat-card">
+          <div className="stat-icon">
+            <Users />
+          </div>
+          <div className="stat-content">
+            <h3>Total Usuarios</h3>
+            <p>{stats.total}</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">
+            <Crown />
+          </div>
+          <div className="stat-content">
+            <h3>Administradores</h3>
+            <p>{stats.admin}</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">
+            <UserCheck />
+          </div>
+          <div className="stat-content">
+            <h3>Analistas</h3>
+            <p>{stats.analista}</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">
+            <Shield />
+          </div>
+          <div className="stat-content">
+            <h3>Lectores</h3>
+            <p>{stats.lector}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Users Table */}
+      <div className="table-container">
+        <table className="users-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan="4" className="loading-cell">
+                  Cargando usuarios...
+                </td>
+              </tr>
+            ) : (
+              usersTableRows
+            )}
+          </tbody>
+        </table>
+      </div>
+      <p>Total encontrados: {filteredUsers.length}</p>
+      {/* Modal */}
+      {modalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-container">
+            <div className="modal-header">
+              <h2>{editingUser ? "Editar Usuario" : "Crear Usuario"}</h2>
+              <button 
+                onClick={handleCloseModal} 
+                className="modal-close"
+                type="button"
+              >
+                <X />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="modal-form">
+              <div className="form-group">
+                <label htmlFor="name">Nombre</label>
+                <input 
+                  id="name"
+                  type="text" 
+                  value={form.name} 
+                  onChange={(e) => setForm({ ...form, name: e.target.value })} 
+                  required 
+                  className="form-input" 
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="email">Email</label>
+                <input 
+                  id="email"
+                  type="email" 
+                  value={form.email} 
+                  onChange={(e) => setForm({ ...form, email: e.target.value })} 
+                  required 
+                  className="form-input" 
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="password">
+                  Contraseña {editingUser && "(opcional)"}
+                </label>
+                <div className="password-input-container">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    className="form-input"
+                    required={!editingUser}
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)} 
+                    className="password-toggle"
+                  >
+                    {showPassword ? <EyeOff /> : <Eye />}
+                  </button>
+                </div>
+              </div>
+              <div className="form-group">
+                <label htmlFor="role">Rol</label>
+                <select 
+                  id="role"
+                  value={form.role} 
+                  onChange={(e) => setForm({ ...form, role: e.target.value })} 
+                  className="form-select"
+                >
+                  <option value="analista">Analista</option>
+                  <option value="admin">Administrador</option>
+                </select>
+              </div>
+              <div className="form-actions">
+                <button type="submit" className="btn-primary" disabled={loading}>
+                  {editingUser ? "Actualizar" : "Crear"}
+                </button>
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  onClick={handleCloseModal}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default SuperDashboard;
+
+// Asegúrate que el token se está enviando correctamente
+console.log("Token:", localStorage.getItem("token"));

@@ -7,6 +7,7 @@ import RequireRole from "./components/RequiereRole";
 import AnalistaPage from "./pages/AnalistaPage";
 import SuperDashboard from "./pages/SuperDashboard"
 
+
 function App() {
   return (
     <Routes>

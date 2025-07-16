@@ -1,0 +1,213 @@
+/* ===== IMPORTS DE TAILWIND ===== */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== VARIABLES CSS ===== */
+:root {
+    --bg-light: #f9fafb;
+    --bg-dark: #111827;
+    --fg-light: #1f2937;
+    --fg-dark: #f3f4f6;
+    --primary: #3b82f6;
+    --danger: #ef4444;
+    --radius: 10px;
+    --transition: 0.25s ease-in-out;
+    --shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* ===== ANIMACIONES ===== */
+@keyframes fondo-zoom {
+    0% {
+        background-size: 110%;
+    }
+    100% {
+        background-size: 120%;
+    }
+}
+
+@keyframes shine {
+    0% {
+        background-position: 100%;
+    }
+    100% {
+        background-position: -100%;
+    }
+}
+
+@keyframes spinner {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ===== FONDOS PRINCIPALES ===== */
+.login-bg {
+    @apply min-h-screen bg-cover bg-center flex items-center justify-center relative overflow-auto;
+    background-image: url('/fondo.jpg');
+    animation: fondo-zoom 18s ease-in-out infinite alternate;
+}
+
+.min-h-screen {
+    background-image: url('/fondo.jpg');
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+}
+
+/* ===== LOGO ===== */
+.logo {
+    @apply absolute text-2xl font-bold tracking-wider text-[#2e63d6];
+    top: 3rem;
+    left: 5rem;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    z-index: 10;
+}
+
+.shiny-text {
+    color: #2889d8a4;
+    background: linear-gradient(
+        120deg,
+        rgba(255, 255, 255, 0) 80%,
+        rgba(255, 255, 255, 0.8) 50%,
+        rgba(255, 255, 255, 0) 70%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    display: inline-block;
+    animation: shine 5s linear infinite;
+}
+
+.shiny-text.disabled {
+    animation: none;
+}
+
+/* ===== ICONOS ===== */
+.icon {
+    position: absolute;
+    /* a brain.png */
+    top: 3rem;
+    left: 2.5rem;
+    width: 30px;
+    height: 30px;
+    z-index: 30;
+    object-fit: contain;
+    filter:color(#2e63d6);
+}
+
+/* ===== CONTENEDOR DE FORMULARIO ===== */
+.form-container {
+    @apply bg-white/30 backdrop-blur-lg rounded-2xl shadow-lg p-8 max-w-md w-full flex flex-col items-center;
+    min-width: 320px;
+    min-height: 340px;
+}
+
+/* ===== INPUTS ===== */
+.input-style {
+    width: 100%;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-color: #ffffff80;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    transition: box-shadow 0.25s ease-in-out;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.input-style.error {
+    border-color: #ef4444;
+}
+
+.input-style:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* ===== BOTONES ===== */
+.button-green {
+    @apply w-full py-3 rounded-xl font-semibold text-white shadow-md transition-transform disabled:opacity-60 disabled:cursor-not-allowed;
+    background: linear-gradient(90deg, #3bb6ff 0%, #1e90ff 100%);
+}
+
+.button-green:hover:not(:disabled) {
+    background: linear-gradient(90deg, #1e90ff 0%, #3bb6ff 100%);
+    transform: translateY(-2px) scale(1.02);
+}
+
+/* ===== SPINNER DE CARGA ===== */
+.spinner {
+    @apply inline-block relative w-5 h-5 mr-2;
+}
+
+.spinner-circle {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spinner 0.6s linear infinite;
+}
+
+/* ===== FONDOS CLAROS Y OSCUROS ===== */
+.ai-light-bg {
+    background-color: var(--bg-light);
+    color: var(--fg-light);
+}
+
+.ai-dark-bg {
+    background-color: var(--bg-dark);
+    color: var(--fg-dark);
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 600px) {
+    .logo {
+        top: 1.5rem;
+        left: 1.5rem;
+        font-size: 1.3rem;
+    }
+    
+    .icon {
+        top: 1.2rem;
+        left: 0.8rem;
+        width: 30px;
+        height: 30px;
+    }
+    
+    .form-container {
+        @apply max-w-[90vw] px-4 py-6 mt-24 mb-8;
+        min-width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .logo {
+        font-size: 1.1rem;
+        top: 1.2rem;
+        left: 1.2rem;
+    }
+    
+    .form-container {
+        @apply px-3 py-5;
+        min-height: 300px;
+    }
+    
+    .input-style {
+        padding: 0.8rem;
+        font-size: 0.9rem;
+    }
+    
+    .button-green {
+        padding: 0.7rem 1rem;
+        font-size: 0.9rem;
+    }
+}

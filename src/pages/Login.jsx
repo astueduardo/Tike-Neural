@@ -18,20 +18,27 @@ const Login = () => {
     e.preventDefault();
     setEmailError("");
     setPasswordError("");
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setEmailError("Formato de email inválido");
-      return;
-    }
-
-    setLoading(true);
+    
     try {
-      const res = await api.post("/auth/login", { email, password });
+      // Agregar log para depuración
+      console.log("Intentando login con:", { email, password });
+      
+      const res = await api.post("/auth/login", { 
+        email, 
+        password 
+      });
+      
+      // Agregar log para ver la respuesta
+      console.log("Respuesta del servidor:", res.data);
+      
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       navigate("/all-interface");
     } catch (err) {
+      // Mejorar el manejo de errores
+      console.error("Error completo:", err);
       if (err.response) {
+        console.error("Respuesta del servidor:", err.response.data);
         const status = err.response.status;
         if (status === 401) {
           setPassword("");
@@ -40,10 +47,12 @@ const Login = () => {
           setEmail("");
           setEmailError("Usuario no encontrado");
         } else {
-          setEmailError("Ocurrió un error. Intenta más tarde.");
+          setEmailError(err.response.data.message || "Ocurrió un error. Intenta más tarde.");
         }
+      } else if (err.request) {
+        setEmailError("Sin conexión al servidor. Verifica tu conexión.");
       } else {
-        setEmailError("Sin conexión al servidor.");
+        setEmailError("Error al procesar la solicitud.");
       }
     } finally {
       setLoading(false);
@@ -52,6 +61,9 @@ const Login = () => {
 
   return (
     <div className="login-bg">
+      <img src="/public/el.png" alt="icon" className="icon" />
+      <span className="logo">TIKÉE NEURAL </span>
+      
       <form onSubmit={handleLogin} className="form-container">
         <h2 className="text-2xl font-bold mb-6 text-center">Iniciar sesión</h2>
         <input
@@ -61,6 +73,7 @@ const Login = () => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          autoComplete="username"
           className={`input-style ${emailError ? "error" : ""}`}
         />
         {emailError && <div style={{ color: "red", marginBottom: 8 }}>{emailError}</div>}
@@ -71,6 +84,7 @@ const Login = () => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          autoComplete="current-password"
           className={`input-style ${passwordError ? "error" : ""}`}
         />
         {passwordError && <div style={{ color: "red", marginBottom: 8 }}>{passwordError}</div>}
