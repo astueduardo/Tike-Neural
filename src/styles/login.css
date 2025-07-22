@@ -1,9 +1,9 @@
-/* ===== IMPORTS DE TAILWIND ===== */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ===== VARIABLES CSS ===== */
+
 :root {
     --bg-light: #f9fafb;
     --bg-dark: #111827;
@@ -41,7 +41,7 @@
     }
 }
 
-/* ===== FONDOS PRINCIPALES ===== */
+
 .login-bg {
     @apply min-h-screen bg-cover bg-center flex items-center justify-center relative overflow-auto;
     background-image: url('/fondo.jpg');
@@ -60,7 +60,7 @@
     overflow: auto;
 }
 
-/* ===== LOGO ===== */
+
 .logo {
     @apply absolute text-2xl font-bold tracking-wider text-[#2e63d6];
     top: 3rem;
@@ -88,7 +88,7 @@
     animation: none;
 }
 
-/* ===== ICONOS ===== */
+
 .icon {
     position: absolute;
     /* a brain.png */
@@ -101,14 +101,14 @@
     filter:color(#2e63d6);
 }
 
-/* ===== CONTENEDOR DE FORMULARIO ===== */
+
 .form-container {
     @apply bg-white/30 backdrop-blur-lg rounded-2xl shadow-lg p-8 max-w-md w-full flex flex-col items-center;
     min-width: 320px;
     min-height: 340px;
 }
 
-/* ===== INPUTS ===== */
+
 .input-style {
     width: 100%;
     padding: 1rem;
@@ -131,7 +131,6 @@
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
-/* ===== BOTONES ===== */
 .button-green {
     @apply w-full py-3 rounded-xl font-semibold text-white shadow-md transition-transform disabled:opacity-60 disabled:cursor-not-allowed;
     background: linear-gradient(90deg, #3bb6ff 0%, #1e90ff 100%);
@@ -142,7 +141,6 @@
     transform: translateY(-2px) scale(1.02);
 }
 
-/* ===== SPINNER DE CARGA ===== */
 .spinner {
     @apply inline-block relative w-5 h-5 mr-2;
 }
@@ -157,7 +155,6 @@
     animation: spinner 0.6s linear infinite;
 }
 
-/* ===== FONDOS CLAROS Y OSCUROS ===== */
 .ai-light-bg {
     background-color: var(--bg-light);
     color: var(--fg-light);
@@ -168,7 +165,6 @@
     color: var(--fg-dark);
 }
 
-/* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 600px) {
     .logo {
         top: 1.5rem;

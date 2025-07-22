@@ -29,7 +29,7 @@ const SuperDashboard = () => {
     name: "", 
     email: "", 
     password: "", 
-    role: "analista" 
+    role: "admin" //
   });
   const [showPassword, setShowPassword] = useState(false);
   const [stats, setStats] = useState({ admin: 0, analista: 0, lector: 0, total: 0 });
@@ -63,7 +63,7 @@ const SuperDashboard = () => {
     setLoading(true);
     try {
       const res = await api.get("/users");
-      console.log("Respuesta del servidor:", res.data); // Para depuración
+      console.log("Respuesta del servidor:", res.data); 
     
       if (res.data && Array.isArray(res.data)) {
         setUsers(res.data);
@@ -91,12 +91,12 @@ const SuperDashboard = () => {
     try {
       if (editingUser) {
         const data = { ...form };
-        if (!form.password) delete data.password;
-        await api.put(`/users/${editingUser.id}`, data);
-        toast.success("Usuario actualizado");
+        if (!form.password) delete data.password; // No actualizar contraseña si está vacía
+        await api.put(`/users/${editingUser.id}`, data);// Actualiza el usuario existente
+        toast.success("Usuario actualizado");// Muestra mensaje de éxito
       } else {
-        await api.post("/auth/register", form);
-        toast.success("Usuario creado");
+        await api.post("/auth/register", form); // Crea un nuevo usuario
+        toast.success("Usuario creado");// Muestra mensaje de éxito
       }
       setModalOpen(false);
       setEditingUser(null);
@@ -109,11 +109,11 @@ const SuperDashboard = () => {
     setLoading(false);
   };
 
-  const resetForm = () => {
-    setForm({ name: "", email: "", password: "", role: "analista" });
+  const resetForm = () => {//
+    setForm({ name: "", email: "", password: "", role: "" });//
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id) => {// Función para eliminar usuario
     if (!window.confirm("¿Eliminar usuario?")) return;
     setLoading(true);
     try {
@@ -127,7 +127,8 @@ const SuperDashboard = () => {
     setLoading(false);
   };
 
-  const handleRoleChange = async (id, newRole) => {
+  const handleRoleChange = async (id, newRole) => {// Función para cambiar rol de usuario
+    if (!window.confirm(`¿Cambiar rol a ${newRole}?`)) return;
     setLoading(true);
     try {
       await api.put(`/users/${id}/role`, { role: newRole });
@@ -146,13 +147,13 @@ const SuperDashboard = () => {
     u.role?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleEditUser = (user) => {
+  const handleEditUser = (user) => {//
     setEditingUser(user);
     setForm({
       name: user.name || "",
       email: user.email || "",
       password: "",
-      role: user.role || "analista"
+      role: user.role || ""
     });
     setModalOpen(true);
   };
@@ -163,6 +164,8 @@ const SuperDashboard = () => {
         return <Crown className="role-icon admin" />;
       case "analista":
         return <UserCheck className="role-icon analista" />;
+      case "lector":
+        return <Shield className="role-icon lector" />;
       default:
         return <Shield className="role-icon" />;
     }
@@ -180,10 +183,7 @@ const SuperDashboard = () => {
       <tr key={userItem.id}>
         <td className="user-cell">
           <div className="user-info">
-            <div className="user-avatar">
-              {userItem.name?.charAt(0).toUpperCase() || "?"}
-            </div>
-            <span>{userItem.name || "Sin nombre"}</span>
+            <span className="user-name">{userItem.name}</span>
           </div>
         </td>
         <td>{userItem.email}</td>
@@ -196,6 +196,7 @@ const SuperDashboard = () => {
               className="role-select"
               disabled={loading}
             >
+              <option value="lector">Lector</option>
               <option value="analista">Analista</option>
               <option value="admin">Administrador</option>
             </select>
@@ -398,6 +399,7 @@ const SuperDashboard = () => {
                   onChange={(e) => setForm({ ...form, role: e.target.value })} 
                   className="form-select"
                 >
+                  <option value="lector">Lector</option>
                   <option value="analista">Analista</option>
                   <option value="admin">Administrador</option>
                 </select>
@@ -425,4 +427,4 @@ const SuperDashboard = () => {
 export default SuperDashboard;
 
 // Asegúrate que el token se está enviando correctamente
-console.log("Token:", localStorage.getItem("token"));
+//;

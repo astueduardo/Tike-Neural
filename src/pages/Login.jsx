@@ -20,25 +20,17 @@ const Login = () => {
     setPasswordError("");
     
     try {
-      // Agregar log para depuración
-      console.log("Intentando login con:", { email, password });
-      
       const res = await api.post("/auth/login", { 
         email, 
         password 
       });
-      
-      // Agregar log para ver la respuesta
-      console.log("Respuesta del servidor:", res.data);
-      
+    
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       navigate("/all-interface");
     } catch (err) {
-      // Mejorar el manejo de errores
-      console.error("Error completo:", err);
+      //manejo de errores
       if (err.response) {
-        console.error("Respuesta del servidor:", err.response.data);
         const status = err.response.status;
         if (status === 401) {
           setPassword("");

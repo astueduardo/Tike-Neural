@@ -39,10 +39,8 @@ export default function ChatWindow({ chatHistory = [], streamingText, isStreamin
         <>
             {error && <div className="ai-error">{error}</div>}
             <div className="ai-chat-history" ref={chatRef}>
-                {chatHistory.length === 0 && !isStreaming ? (
-
-                    //como hacer mas gruesa la letr                  
-                    <div className="ai-title" style={{ display: "flex", justifyContent: "center",  opacity: 0.8, color: "inherit" , fontWeight:"Blond" , fontSize:"1.5rem" , fontFamily:"ui-sans-serif, system-ui, sans-serif ", marginTop:"30%" }}>¿En qué puedo ayudarte?</div>
+                {chatHistory.length === 0 && !isStreaming ? (               
+                    <div className="ai-title" >¿En qué puedo ayudarte?</div>
                 ) : (  
                     chatHistory.map((msg) => (
                         <div key={msg.id || `${msg.role}-${msg.timestamp}`} className={`ai-chat-bubble ${msg.role === "user" ? "user" : "ia"}`}>
@@ -58,8 +56,8 @@ export default function ChatWindow({ chatHistory = [], streamingText, isStreamin
                 {isStreaming && (
                     <div className="ai-chat-bubble ia">
                         <div className="message-content">
-                            {streamingText} {/* texto que esta entrando en tiempo real  */}
-                            <span className="blinking-cursor">Escribiendo..</span>
+                            {streamingText} {}
+                            <span className="blinking-cursor">Escribiendo . . . </span>
                         </div>
                     </div>
                 )}

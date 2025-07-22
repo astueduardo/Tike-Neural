@@ -1,51 +1,77 @@
+* {
+    scrollbar-width: none;
+    -webkit-scrollbar-width: none;
+}
 
-/* Variables CSS */
+::-webkit-scrollbar {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .ai-sidebar {
+        min-width: 100px;
+    }
+
+    .ai-main {
+        flex-direction: column;
+    }
+
+    .ai-content {
+        padding: 1rem;
+    }
+}
+
 :root {
-    --bg-light: #f9fafb;
-    --bg-dark: #111827;
-    --fg-light: #1f2937;
-    --fg-dark: #f3f4f6;
     --primary: #3b82f6;
+    --primary-hover: #2563eb;
     --danger: #ef4444;
     --radius: 10px;
     --transition: 0.25s ease-in-out;
     --shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
-.input-style {
-    @apply w-full px-4 py-3 mb-4 bg-white/80 rounded-xl text-base placeholder-gray-500 
-        border transition-shadow focus:outline-none focus:bg-[#eafdff] focus:ring-2 focus:ring-blue-300;
-}
-
 .input-style.error {
     @apply border-red-500;
 }
 
-/* Fondos claros y oscuros */
+
 .ai-light-bg {
-    background-color: var(--bg-light);
-    color: var(--fg-light);
+    --bg-main: #f9fafb; /* Fondo principal */
+    --bg-sidebar: #e5e7eb; /* Fondo del sidebar */
+    --bg-content: #f9fafb; /* Fondo del contenido */
+    --bg-input: #ffffff; /* Fondo de inputs y burbujas */
+    --bg-hover: rgba(59, 130, 246, 0.1); /* Fondo para hover */
+    --fg-main: #1f2937; /* Color de texto principal */
+    --fg-secondary: #6b7280; /* Color de texto secundario */
+    --fg-on-primary: #ffffff; /* Color de texto sobre color primario */
+    --border-color: #d1d5db;
 }
 .ai-dark-bg {
-    background-color: var(--bg-dark);
-    color: var(--fg-dark);
+    --bg-main: #111827;
+    --bg-sidebar: #1f2937;
+    --bg-content: #111827;
+    --bg-input: #23272f;
+    --bg-hover: rgba(59, 130, 246, 0.2);
+    --fg-main: #f3f4f6;
+    --fg-secondary: #cbd5e1;
+    --fg-on-primary: #ffffff;
+    --border-color: #4b5563;
 }
 
 
-/* Layout principal */
 .ai-main {
     display: flex;
+    flex-direction: row;
+    width: 100%;
     min-height: 100vh;
-    min-width: 100vw;
-    max-width: 100vw;
-    max-height: 100vh;
+    transition: background-color var(--transition), color var(--transition);
     margin: 0;
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.12);
     overflow: hidden;
-    background: #111827;
+    background-color: var(--bg-main);
+    color: var(--fg-main);
     align-items: stretch;
     justify-content: stretch;
-    transition: background var(--transition), color var(--transition);
     position: fixed;
     top: 0;
     left: 0;
@@ -53,10 +79,9 @@
     bottom: 0;
 }
 
-/* Sidebar */
+
 .ai-sidebar {
-    background: #1f2937;
-    color: #fff;
+    background-color: var(--bg-sidebar);
     padding: 2.5rem 1.2rem 2.5rem 1.7rem;
     display: flex;
     flex-direction: column;
@@ -66,6 +91,7 @@
     height: 100%;
     box-shadow: none;
     justify-content: flex-start;
+    position: relative;
 }
 
 .ai-sidebar-title {
@@ -80,7 +106,7 @@
 
 .ai-new-chat-btn {
     background: var(--primary);
-    color: white;
+    color: var(--fg-on-primary);
     border: none;
     padding: 0.75rem 1rem;
     border-radius: var(--radius);
@@ -93,18 +119,18 @@
 }
 
 .ai-new-chat-btn:hover {
-    background: #2563eb;
+    background: var(--primary-hover);
 }
 
 .ai-search {
     padding: 0.75rem 1rem;
-    background: rgba(255, 255, 255, 0.1);
+    background-color: var(--bg-input);
     border-radius: var(--radius);
     display: flex;
     align-items: center;
     gap: 0.5rem;
     font-size: 0.9rem;
-    color: #cbd5e1;
+    color: var(--fg-secondary);
 }
 
 .ai-chat-list {
@@ -116,7 +142,7 @@
     width: 100%;
     background: none;
     border: none;
-    color: #fff;
+    color: var(--fg-main);
     padding: 0.75rem 1rem;
     border-radius: var(--radius);
     cursor: default;
@@ -130,15 +156,14 @@
 }
 
 .ai-chat-list__item:hover {
-    background: rgba(59, 130, 246, 0.2);
+    background-color: var(--bg-hover);
 }
 
 .ai-chat-list__item.active {
     background: var(--primary);
-    color: #fff;
+    color: var(--fg-on-primary);
 }
 
-/* Contenido principal */
 .ai-content {
     flex: 1;
     display: flex;
@@ -146,13 +171,10 @@
     align-items: center;
     position: relative;
     min-height: 100%;
-    transition: background var(--transition);
+    transition: background-color var(--transition);
     justify-content: flex-end;
-    padding: 2.5rem 2.5rem 2.5rem 2rem;
-    background: #111827;
-}
+    padding: 2.5rem 2.5rem 2.5rem 2rem;}
 
-/* Botones superiores */
 .ai-config-button,
 .ai-mode-toggle {
     position: absolute;
@@ -161,7 +183,7 @@
     cursor: pointer;
     background: none;
     border: none;
-    color: #cbd5e1;
+    color: var(--fg-secondary);
     z-index: 5;
     transition: color 0.2s;
 }
@@ -171,7 +193,7 @@
 
 .ai-config-button:hover,
 .ai-mode-toggle:hover {
-    color: #3b82f6;
+    color: var(--primary);
 }
 
 /* Menú de configuración */
@@ -179,7 +201,8 @@
     position: absolute;
     top: 3.5rem;
     right: 1.5rem;
-    background: #fff;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     padding: 1rem;
@@ -194,19 +217,29 @@
     font-size: 1rem;
     background: none;
     border: none;
-    color: var(--primary);
+    color: var(--fg-main);
     padding: 0.5rem 0;
     text-align: left;
     border-radius: var(--radius);
-    transition: background var(--transition);
+    transition: background-color var(--transition);
     cursor: pointer;
 }
 
 .ai-config-menu__btn:hover {
-    background: rgba(59, 130, 246, 0.1);
+    background-color: var(--bg-hover);
 }
 
-/* Chat */
+.ai-title {
+    display: flex;
+    align-self: center;
+    opacity: 0.7;
+    color: var(--fg-main);
+    font-weight: bold;
+    font-size: 1.5rem;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    margin-top: 30%;
+}
+
 .ai-chat-history {
     width: 100%;
     max-width: 900px;
@@ -226,7 +259,7 @@
     outline: none;
     box-shadow: none;
     position: relative;
-    
+    align-items: flex-start;
 }
 
 .ai-chat-bubble {
@@ -238,9 +271,9 @@
     margin-bottom: 0.5rem;
     box-shadow: none;
     border: none;
-    position: relative;    
-    background: #23272f;
-    color: #fff;
+    position: relative;
+    background-color: var(--bg-input);
+    color: var(--fg-main);
 }
 
 
@@ -253,31 +286,25 @@
 }
 
 .ai-input-wrapper{
-    width: 120%;
+    width: 500px;
     flex: 0 0 auto;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: #23272f;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius);
     padding: 0.5rem 1rem;
     margin: 1.5rem 0 0 0;
     position: relative;
     box-shadow: var(--shadow);
-    transition: background var(--transition);
-}
-.ai-input-wrapper:hover {
-    background: #1f2937;
+    transition: background-color var(--transition);
 }
 
-
-.ai-input{
-    border-style: none;
-    border: none;
+.ai-input{ 
     outline: none;
     background: transparent;
     width: 100%;
-    color: #fff;
     font-size: 1rem;
     transition: background var(--transition);
 
@@ -287,20 +314,21 @@
     flex: 1;
     background: none;
     border: none;
-    color: #fff;
+    color: var(--fg-main);
     font-size: 1rem;
 }
 
 
 .ai-chat-bubble.user {
-    background: #23272f;
-    color: #fff;
+    background-color: var(--primary);
+    color: var(--fg-on-primary);
+    align-self: flex-end;
 }
 
 button.ai-submit-button {
-    background: #ffffff;
+    background: var(--primary);
     margin-top:1rem;
-    color: #000000;
+    color: var(--fg-on-primary);
     border: none;
     padding: 0.5rem 1rem;
     border-radius: 5rem;
@@ -309,25 +337,33 @@ button.ai-submit-button {
     justify-content: center;
     margin-bottom: 1rem;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background-color 0.2s;
 }
 
 .ai-submit-button:disabled {
     cursor: not-allowed;
     opacity: 0.6;
-    color: #000000;
-    background: rgb(31, 41, 55);
 }
-/*el icono quiero que sea a la derecha*/ 
-.nose, .icon12 {
-    position: relative;
+
+.ai-chat-list__item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: none;
+    border-radius: var(--radius);
+    margin-bottom: 0.4rem;
+}
+
+.ai-edit-chat-btn , .ai-chat-list__item-wrapper {
+
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    text-align: center;
-    fill: currentColor;
+    gap: 0.5rem;
+    color: var(--fg-secondary);
+    font-size: 1rem;
     cursor: pointer;
-    color: #cbd5e1;
+    transition: color var(--transition);
 }
+
+
+
