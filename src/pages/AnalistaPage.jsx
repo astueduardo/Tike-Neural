@@ -1,408 +1,550 @@
-import { useState} from 'react';
-import { 
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, 
-  CartesianGrid, Tooltip, Legend, ResponsiveContainer 
-} from 'recharts';
-import { 
-  MessageSquare, Users, Clock, AlertTriangle, Settings, Search, 
-  Filter, Edit, Save, Play, Brain, Database, GitBranch, User,
-  CheckCircle, XCircle, AlertCircle, TrendingUp, Activity
-} from 'lucide-react';
+import React, { useEffect, useState, useRef } from "react";
+import { MessageSquare, User, Search, Activity, Database, Settings, Users, Clock, Play, Download, FileText } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import requestService from "../services/requestService";
+import "../styles/Analista.css";
 
-const ChatbotAnalystInterface = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [selectedConversation, setSelectedConversation] = useState(null);
-  const [simulationInput, setSimulationInput] = useState('');
+const AnalistaPage = () => {
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [chats, setChats] = useState([]);
+  const [filteredChats, setFilteredChats] = useState([]);
+  const [userList, setUserList] = useState([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [search, setSearch] = useState("");
+  const [simulationInput, setSimulationInput] = useState("");
+  const [simulationResult, setSimulationResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [simulatingIA, setSimulatingIA] = useState(false);
+  const [expandedChatId, setExpandedChatId] = useState(null);
+  const abortControllerRef = useRef(null);
+  const { user } = useAuth();
 
-  // Datos de ejemplo para métricas
-  const dashboardData = {
-    activeChats: 47,
-    totalMessages: 1284,
-    avgResponseTime: 2.3,
-    humanEscalations: 12,
-    aiSuccess: 87.2,
-    userSatisfaction: 4.2
+  useEffect(() => {
+    if (user?.role === "admin") fetchUserList();
+    fetchChats();
+  }, [selectedUserId]);
+
+  const fetchUserList = async () => {
+    try {
+      const res = await requestService.makeRequest(`${import.meta.env.VITE_API_URL}/users`);
+      const data = await res.json();
+      setUserList(data);
+    } catch (error) {
+      console.error("Error al cargar usuarios:", error);
+    }
   };
 
-  const conversationData = [
-    { hour: '09:00', messages: 45, escalations: 2 },
-    { hour: '10:00', messages: 67, escalations: 3 },
-    { hour: '11:00', messages: 89, escalations: 5 },
-    { hour: '12:00', messages: 123, escalations: 8 },
-    { hour: '13:00', messages: 98, escalations: 4 },
-    { hour: '14:00', messages: 76, escalations: 3 }
-  ];
+  const fetchChats = async () => {
+    setLoading(true);
+    try {
+      let endpoint;
+      
+      // Determinar endpoint según rol y usuario seleccionado
+      if (user.role === "admin") {
+        endpoint = selectedUserId ? `/chats/${selectedUserId}` : `/chats/all`;
+      } else if (user.role === "analista") {
+        endpoint = selectedUserId ? `/chats/${selectedUserId}` : `/chats/all`;
+      } else {
+        endpoint = `/chats/${user.id}`; // Lectores solo ven sus propios chats
+      }
 
-  const topicsData = [
-    { name: 'Soporte técnico', value: 35, color: '#8884d8' },
-    { name: 'Facturación', value: 25, color: '#82ca9d' },
-    { name: 'Cancelaciones', value: 20, color: '#ffc658' },
-    { name: 'Información general', value: 15, color: '#ff7300' },
-    { name: 'Otros', value: 5, color: '#00ff88' }
-  ];
+      const res = await requestService.makeRequest(`${import.meta.env.VITE_API_URL}${endpoint}`);
+      const data = await res.json();
+      
+      let chatsArray = [];
+      if (Array.isArray(data.chats)) {
+        chatsArray = data.chats;
+      } else if (Array.isArray(data)) {
+        chatsArray = data;
+      }
 
-  const conversations = [
-    { 
-      id: 1, 
-      user: 'Usuario_123', 
-      status: 'Resuelto por IA', 
-      topic: 'Soporte técnico', 
-      time: '14:30', 
-      satisfaction: 5,
-      messages: [
-        { sender: 'user', text: 'Mi aplicación no carga correctamente' },
-        { sender: 'ai', text: 'Entiendo tu problema. ¿Podrías decirme qué dispositivo estás usando?' },
-        { sender: 'user', text: 'iPhone 12 con iOS 15' },
-        { sender: 'ai', text: 'Intenta cerrar completamente la app y reiniciarla. También verifica que tengas la última versión instalada.' },
-        { sender: 'user', text: 'Funcionó! Gracias' }
-      ]
-    },
-    { 
-      id: 2, 
-      user: 'Usuario_456', 
-      status: 'Escalado a humano', 
-      topic: 'Facturación', 
-      time: '14:15', 
-      satisfaction: 3,
-      messages: [
-        { sender: 'user', text: 'Me cobraron doble este mes' },
-        { sender: 'ai', text: 'Lamento escuchar eso. Voy a revisar tu cuenta.' },
-        { sender: 'ai', text: 'No puedo acceder a los detalles específicos de facturación. Te conectaré con un agente humano.' }
-      ]
+      // Enriquecer los chats con información del usuario
+      const enrichedChats = chatsArray.map(chat => ({
+        ...chat,
+        userName: chat.user?.name || chat.userName || "Usuario desconocido",
+        userEmail: chat.user?.email || chat.userEmail || "",
+        messagesCount: chat.messages?.length || 0,
+        lastMessage: chat.messages?.[chat.messages?.length - 1]?.answer?.substring(0, 100) + "..." || "",
+        createdAt: chat.createdAt || new Date().toISOString()
+      }));
+
+      setChats(enrichedChats);
+      setFilteredChats(enrichedChats);
+    } catch (error) {
+      console.error("Error al obtener chats:", error);
+      setChats([]);
+      setFilteredChats([]);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleSearch = (e) => {
+    const query = e.target.value.toLowerCase();
+    setSearch(query);
+    const filtered = chats.filter((chat) => {
+      const msg = chat.messages?.[0];
+      return (
+        chat.userName?.toLowerCase().includes(query) ||
+        chat.userEmail?.toLowerCase().includes(query) ||
+        msg?.question?.toLowerCase().includes(query) ||
+        msg?.answer?.toLowerCase().includes(query)
+      );
+    });
+    setFilteredChats(filtered);
+  };
+
+  const handleSimulate = async () => {
+    if (!simulationInput.trim()) return;
+    
+    setSimulatingIA(true);
+    setSimulationResult(null);
+
+    // Cancelar request anterior si existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+    
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/neural/respond`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          question: simulationInput,
+          module: "Conversacion"
+        }),
+        signal: abortControllerRef.current.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulatedText += decoder.decode(value, { stream: true });
+      }
+
+      const data = JSON.parse(accumulatedText);
+      
+      setSimulationResult({
+        question: simulationInput,
+        answer: data?.data?.answer || "Sin respuesta",
+        intention: data?.data?.intention || "No detectada",
+        entities: data?.data?.entities || [],
+        timestamp: new Date().toLocaleString()
+      });
+      
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        console.error("Error en simulación IA:", error);
+        setSimulationResult({
+          question: simulationInput,
+          answer: "Error al obtener respuesta",
+          error: error.message,
+          timestamp: new Date().toLocaleString()
+        });
+      }
+    } finally {
+      setSimulatingIA(false);
+    }
+  };
+
+  const handleUserChange = (e) => {
+    setSelectedUserId(e.target.value);
+  };
+
+  const exportToPDF = () => {
+    window.print();
+  };
+
+  const exportChatData = () => {
+    const dataToExport = filteredChats.map(chat => ({
+      usuario: chat.userName,
+      email: chat.userEmail,
+      fecha: new Date(chat.createdAt).toLocaleDateString(),
+      mensajes: chat.messagesCount,
+      conversacion: chat.messages?.map(msg => ({
+        pregunta: msg.question,
+        respuesta: msg.answer,
+        timestamp: msg.timestamp
+      })) || []
+    }));
+
+    const jsonString = JSON.stringify(dataToExport, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `chats_export_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const toggleChatExpansion = (chatId) => {
+    setExpandedChatId(expandedChatId === chatId ? null : chatId);
+  };
+
+  const tabs = [
+    { id: "dashboard", label: "Dashboard", icon: Activity },
+    { id: "conversaciones", label: "Conversaciones", icon: MessageSquare },
+    { id: "conocimiento", label: "Simulación IA", icon: Database },
+    { id: "configuracion", label: "Configuración", icon: Settings }
   ];
 
+  const dashboardStats = {
+    totalChats: chats.length,
+    totalMessages: chats.reduce((sum, c) => sum + (c.messages?.length || 0), 0),
+    avgMessagesPerChat: chats.length > 0
+      ? (chats.reduce((sum, c) => sum + (c.messages?.length || 0), 0) / chats.length).toFixed(1)
+      : 0
+  };
 
   const renderDashboard = () => (
-    <div className="space-y-6">
-      {/* Métricas principales */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Chats Activos</p>
-              <p className="text-2xl font-bold text-blue-600">{dashboardData.activeChats}</p>
+    <div className="analista-page">
+      <div className="stats-grid">
+        <div className="stat-card blue">
+          <div className="stat-content">
+            <div className="stat-info">
+              <p className="stat-label">Total de Chats</p>
+              <p className="stat-value">{dashboardStats.totalChats}</p>
             </div>
-            <MessageSquare className="h-8 w-8 text-blue-500" />
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Mensajes Total</p>
-              <p className="text-2xl font-bold text-green-600">{dashboardData.totalMessages}</p>
-            </div>
-            <Users className="h-8 w-8 text-green-500" />
+            <MessageSquare className="stat-icon" />
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Tiempo Respuesta</p>
-              <p className="text-2xl font-bold text-yellow-600">{dashboardData.avgResponseTime}s</p>
+        <div className="stat-card green">
+          <div className="stat-content">
+            <div className="stat-info">
+              <p className="stat-label">Total de Mensajes</p>
+              <p className="stat-value">{dashboardStats.totalMessages}</p>
             </div>
-            <Clock className="h-8 w-8 text-yellow-500" />
+            <Users className="stat-icon" />
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-red-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Escalaciones</p>
-              <p className="text-2xl font-bold text-red-600">{dashboardData.humanEscalations}</p>
+        <div className="stat-card yellow">
+          <div className="stat-content">
+            <div className="stat-info">
+              <p className="stat-label">Promedio x Chat</p>
+              <p className="stat-value">{dashboardStats.avgMessagesPerChat}</p>
             </div>
-            <AlertTriangle className="h-8 w-8 text-red-500" />
+            <Clock className="stat-icon" />
           </div>
-        </div>
-  
-    </div>
-
-      {/* Alertas */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4 flex items-center">
-          <AlertTriangle className="h-5 w-5 mr-2 text-orange-500" />
-          Alertas Recientes
-        </h3>
-      </div>
-
-      {/* Gráficos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Actividad por Hora</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={conversationData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="hour" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="messages" stroke="#8884d8" name="Mensajes" />
-              <Line type="monotone" dataKey="escalations" stroke="#82ca9d" name="Escalaciones" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Temas Más Comunes</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={topicsData}
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                dataKey="value"
-                label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
-              >
-                {topicsData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
         </div>
       </div>
     </div>
   );
 
-  const renderConversations = () => (
-    <div className="space-y-6">
-      {/* Filtros de búsqueda */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <div className="flex flex-wrap gap-4 items-center">
-          <div className="flex items-center space-x-2">
-            <Search className="h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar conversaciones..."
-              className="border rounded-lg px-3 py-2 w-64"
-            />
-          </div>
-          <select className="border rounded-lg px-3 py-2">
-            <option>Todos los estados</option>
-            <option>Resuelto por IA</option>
-            <option>Escalado a humano</option>
-            <option>En progreso</option>
-          </select>
-          <select className="border rounded-lg px-3 py-2">
-            <option>Todos los temas</option>
-            <option>Soporte técnico</option>
-            <option>Facturación</option>
-            <option>Cancelaciones</option>
-          </select>
-          <input type="date" className="border rounded-lg px-3 py-2" />
+  const renderConversaciones = () => (
+    <div className="analista-conversations">
+      <div className="conversations-header">
+        <div className="search-container">
+          <Search className="search-icon" />
+          <input
+            type="text"
+            placeholder="Buscar por usuario, email o contenido..."
+            value={search}
+            onChange={handleSearch}
+            className="search-input"
+          />
         </div>
+        
+        {(user?.role === "admin" || user?.role === "analista") && (
+          <select
+            value={selectedUserId}
+            onChange={handleUserChange}
+            className="user-select"
+          >
+            <option value="">Todos los usuarios</option>
+            {userList.map(u => (
+              <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+            ))}
+          </select>
+        )}
+        
+        <button onClick={exportToPDF} className="export-btn">
+          <FileText className="btn-icon" />
+          PDF
+        </button>
+        
+        <button onClick={exportChatData} className="export-btn secondary">
+          <Download className="btn-icon" />
+          JSON
+        </button>
       </div>
 
-      {/* Lista de conversaciones */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
-          {/* Lista */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Conversaciones Recientes</h3>
-            <div className="space-y-3">
-              {conversations.map(conv => (
-                <div
-                  key={conv.id}
-                  className={`p-4 border rounded-lg cursor-pointer hover:bg-gray-50 ${
-                    selectedConversation?.id === conv.id ? 'border-blue-500 bg-blue-50' : ''
-                  }`}
-                  onClick={() => setSelectedConversation(conv)}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-medium">{conv.user}</span>
-                    <span className="text-sm text-gray-500">{conv.time}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      conv.status === 'Resuelto por IA' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-orange-100 text-orange-800'
-                    }`}>
-                      {conv.status}
-                    </span>
-                    <span className="text-sm text-gray-600">{conv.topic}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    {[...Array(5)].map((_, i) => (
-                      <div
-                        key={i}
-                        className={`w-3 h-3 rounded-full ${
-                          i < conv.satisfaction ? 'bg-yellow-400' : 'bg-gray-200'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
+      {loading ? (
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Cargando conversaciones...</p>
+        </div>
+      ) : (
+        <div className="conversations-list">
+          {filteredChats.length === 0 ? (
+            <div className="empty-state">
+              <MessageSquare className="empty-icon" />
+              <h3>No hay conversaciones</h3>
+              <p>No se encontraron conversaciones para mostrar</p>
             </div>
-          </div>
-
-          {/* Detalle de conversación */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Detalle de Conversación</h3>
-            {selectedConversation ? (
-              <div className="border rounded-lg p-4">
-                <div className="mb-4">
-                  <h4 className="font-medium">{selectedConversation.user}</h4>
-                  <p className="text-sm text-gray-600">{selectedConversation.topic} • {selectedConversation.time}</p>
+          ) : (
+            filteredChats.map((chat) => (
+              <div key={chat.id} className="conversation-item">
+                <div className="conversation-header" onClick={() => toggleChatExpansion(chat.id)}>
+                  <div className="conversation-info">
+                    <h3 className="conversation-title">
+                      {chat.userName}
+                    </h3>
+                    <p className="conversation-email">{chat.userEmail}</p>
+                    <p className="conversation-date">
+                      {new Date(chat.createdAt).toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                  <div className="conversation-stats">
+                    <span className="message-count">
+                      {chat.messagesCount} mensajes
+                    </span>
+                    <button className="expand-btn">
+                      {expandedChatId === chat.id ? '−' : '+'}
+                    </button>
+                  </div>
                 </div>
-                <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
-                  {selectedConversation.messages.map((msg, idx) => (
-                    <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-xs p-3 rounded-lg ${
-                        msg.sender === 'user' 
-                          ? 'bg-blue-500 text-white' 
-                          : 'bg-gray-200 text-gray-800'
-                      }`}>
-                        <p className="text-sm">{msg.text}</p>
-                        {msg.sender === 'ai' && (
-                          <div className="flex space-x-2 mt-2">
-                            <button className="text-xs bg-green-500 text-white px-2 py-1 rounded">
-                              <CheckCircle className="h-3 w-3" />
-                            </button>
-                            <button className="text-xs bg-red-500 text-white px-2 py-1 rounded">
-                              <XCircle className="h-3 w-3" />
-                            </button>
+                
+                {expandedChatId === chat.id && (
+                  <div className="conversation-messages">
+                    {chat.messages?.map((msg, idx) => (
+                      <div key={idx} className="message-thread">
+                        {msg.question && (
+                          <div className="message-item user-message">
+                            <div className="message-header">
+                              <User className="message-icon user" />
+                              <span className="message-label">Pregunta:</span>
+                              <span className="message-time">
+                                {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : ''}
+                              </span>
+                            </div>
+                            <div className="message-content">
+                              {msg.question}
+                            </div>
+                          </div>
+                        )}
+                        {msg.answer && (
+                          <div className="message-item ai-message">
+                            <div className="message-header">
+                              <MessageSquare className="message-icon ai" />
+                              <span className="message-label">Respuesta IA:</span>
+                              <span className="message-time">
+                                {msg.timestamp ? new Date(msg.timestamp + 1000).toLocaleTimeString() : ''}
+                              </span>
+                            </div>
+                            <div className="message-content">
+                              {msg.answer}
+                            </div>
                           </div>
                         )}
                       </div>
-                    </div>
-                  ))}
-                </div>
-                <textarea
-                  placeholder="Añadir notas sobre esta conversación..."
-                  className="w-full p-3 border rounded-lg text-sm"
-                  rows={3}
-                />
+                    ))}
+                  </div>
+                )}
               </div>
+            ))
+          )}
+        </div>
+      )}
+      
+      <div className="conversations-footer">
+        <p>Total: {filteredChats.length} conversaciones encontradas</p>
+        <p>Mensajes totales: {filteredChats.reduce((sum, chat) => sum + chat.messagesCount, 0)}</p>
+      </div>
+    </div>
+  );
+
+  const renderConocimiento = () => (
+    <div className="analista-knowledge">
+      <div className="simulation-container">
+        <h2 className="simulation-title">
+          <Play className="title-icon" /> 
+          Simulador de IA - Prueba de Respuestas
+        </h2>
+        
+        <div className="simulation-input-section">
+          <textarea
+            placeholder="Escribe una pregunta para probar la respuesta de la IA..."
+            value={simulationInput}
+            onChange={(e) => setSimulationInput(e.target.value)}
+            className="simulation-textarea"
+            rows={3}
+          />
+          <button
+            onClick={handleSimulate}
+            disabled={simulatingIA || !simulationInput.trim()}
+            className="simulate-btn"
+          >
+            {simulatingIA ? (
+              <>
+                <div className="btn-spinner"></div>
+                Consultando IA...
+              </>
             ) : (
-              <div className="border rounded-lg p-8 text-center text-gray-500">
-                Selecciona una conversación para ver los detalles
+              <>
+                <Play className="btn-icon" />
+                Probar con IA
+              </>
+            )}
+          </button>
+        </div>
+
+        {simulationResult && (
+          <div className="simulation-results">
+            <div className="result-header">
+              <h3>Resultado de la Simulación</h3>
+              <span className="result-timestamp">{simulationResult.timestamp}</span>
+            </div>
+            
+            <div className="result-question">
+              <strong>Pregunta:</strong>
+              <p>{simulationResult.question}</p>
+            </div>
+            
+            <div className="result-answer">
+              <strong>Respuesta de la IA:</strong>
+              <div className="answer-content">
+                {simulationResult.error ? (
+                  <div className="error-message">
+                    <p>❌ Error: {simulationResult.error}</p>
+                  </div>
+                ) : (
+                  <p>{simulationResult.answer}</p>
+                )}
+              </div>
+            </div>
+            
+            {simulationResult.intention && (
+              <div className="result-metadata">
+                <div className="metadata-item">
+                  <strong>Intención detectada:</strong> {simulationResult.intention}
+                </div>
+                {simulationResult.entities && simulationResult.entities.length > 0 && (
+                  <div className="metadata-item">
+                    <strong>Entidades:</strong> {simulationResult.entities.join(", ")}
+                  </div>
+                )}
               </div>
             )}
           </div>
+        )}
+        
+        <div className="simulation-info">
+          <h4>ℹ️ Información del Simulador</h4>
+          <p>Este simulador te permite probar cómo responde la IA a diferentes preguntas sin afectar las conversaciones reales de los usuarios.</p>
+          <ul>
+            <li>Las respuestas son generadas en tiempo real por el mismo sistema de IA</li>
+            <li>Ideal para probar nuevas funcionalidades o validar respuestas</li>
+            <li>Los resultados no se guardan en el historial</li>
+          </ul>
         </div>
       </div>
     </div>
   );
 
-  const renderKnowledge = () => (
-    <div className="space-y-6">
-
-      {/* Simulador */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4 flex items-center ">
-          <Play className="h-5 w-5 mr-2" />
-          Simulador de IA
-        </h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Prueba una pregunta:</label>
-            <input
-              type="text"
-              value={simulationInput}
-              onChange={(e) => setSimulationInput(e.target.value)}
-              placeholder="Ej: Mi aplicación no funciona"
-              className="w-full p-3 border rounded-lg"
-            />
+  const renderConfiguracion = () => (
+    <div className="analista-config">
+      <div className="config-container">
+        <h2 className="config-title">
+          <Settings className="title-icon" />
+          Configuración del Sistema
+        </h2>
+        
+        <div className="config-section">
+          <h3>Preferencias de Análisis</h3>
+          <div className="config-options">
+            <label className="config-option">
+              <input type="checkbox" />
+              Mostrar métricas avanzadas
+            </label>
+            <label className="config-option">
+              <input type="checkbox" />
+              Exportación automática
+            </label>
+            <label className="config-option">
+              <input type="checkbox" />
+              Notificaciones en tiempo real
+            </label>
           </div>
-          <button className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600">
-            Simular Respuesta
-          </button>
-          {simulationInput && (
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Intención detectada:</p>
-                  <p className="text-blue-600">problema_tecnico (89%)</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Entidades:</p>
-                  <p className="text-green-600">aplicación, no funciona</p>
-                </div>
-              </div>
-              <div className="mt-4">
-                <p className="text-sm font-medium text-gray-700">Respuesta sugerida:</p>
-                <p className="mt-2 p-3 bg-white border rounded">
-                  Entiendo que tienes problemas con la aplicación. ¿Podrías decirme qué dispositivo estás usando y qué error específico estás viendo?
-                </p>
-              </div>
-            </div>
-          )}
+        </div>
+        
+        <div className="config-section">
+          <h3>Filtros de Datos</h3>
+          <div className="filter-options">
+            <label>
+              Período de análisis:
+              <select className="filter-select">
+                <option>Último mes</option>
+                <option>Últimos 3 meses</option>
+                <option>Último año</option>
+              </select>
+            </label>
+          </div>
         </div>
       </div>
     </div>
   );
-
-  
-  const tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: Activity },
-    { id: 'conversations', label: 'Conversaciones', icon: MessageSquare },
-    { id: 'knowledge', label: 'Conocimiento', icon: Database },
-    { id: 'settings', label: 'Configuración', icon: Settings }
-  ];
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Panel del Analista</h1>
-              <p className="text-sm text-gray-600">Sistema de gestión de IA</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-gray-600">Sistema activo</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <User className="h-5 w-5 text-gray-400" />
-                <span className="text-sm text-gray-700">Analista Principal</span>
-              </div>    
-            </div>
+    <div className="analista-page">
+      <header className="analista-header">
+        <div className="header-content">
+          <div className="header-info">
+            <h1 className="header-title">Panel de Analista</h1>
+            <p className="header-subtitle">Visualización de conversaciones y métricas</p>
+          </div>
+          <div className="user-info">
+            <User className="user-icon" />
+            <span className="user-name">{user?.name || "Analista"}</span>
           </div>
         </div>
       </header>
 
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="px-6">
-          <div className="flex space-x-8">
-            {tabs.map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 py-4 px-2 border-b-2 text-sm font-medium ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
+      <nav className="analista-nav">
+        <div className="nav-tabs">
+          {tabs.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`nav-tab ${activeTab === id ? "active" : ""}`}
+            >
+              <Icon className="tab-icon" />
+              <span>{label}</span>
+            </button>
+          ))}
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="p-6">
-        {activeTab === 'dashboard' && renderDashboard()}
-        {activeTab === 'conversations' && renderConversations()}
-        {activeTab === 'knowledge' && renderKnowledge()}
+      <main className="analista-main">
+        {activeTab === "dashboard" && renderDashboard()}
+        {activeTab === "conversaciones" && renderConversaciones()}
+        {activeTab === "conocimiento" && renderConocimiento()}
+        {activeTab === "configuracion" && renderConfiguracion()}
       </main>
     </div>
   );
 };
 
-export default ChatbotAnalystInterface;
+export default AnalistaPage;

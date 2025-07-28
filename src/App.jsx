@@ -6,7 +6,7 @@ import Allnterface from "./pages/Allnterface";
 import PrivateRoute from "./components/PrivateRoute";
 import RequireRole from "./components/RequiereRole";
 import AnalistaPage from "./pages/AnalistaPage";
-import SuperDashboard from "./pages/SuperDashboard" 
+import SuperDashboard from "./pages/SuperDashboard";
 
 
 function App() {

@@ -12,7 +12,7 @@ import "../styles/Allterface.css";
 
 export default function AllInterface() {
   const { theme, toggleTheme } = useTheme();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
 
   const [userInput, setUserInput] = useState("");
@@ -24,18 +24,16 @@ export default function AllInterface() {
   const [streamingText, setStreamingText] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState("");
-  const [originalChats, setOriginalChats] = useState([]); // Para restaurar después de búsqueda
+  const [originalChats, setOriginalChats] = useState([]);
   const abortControllerRef = useRef(null);
 
-  // Función para cargar chats desde el backend
+  const localKey = (key) => `${key}_${user?.id || "guest"}`;
+
   const loadChatsFromBackend = useCallback(async () => {
-    // Verificar que el token existe antes de hacer la petición
     const token = localStorage.getItem("token");
     if (!token) {
-      console.log('No hay token, cargando desde localStorage');
-      // Cargar desde localStorage si no hay token
-      const savedChats = JSON.parse(localStorage.getItem("chats")) || [];
-      const savedHistories = JSON.parse(localStorage.getItem("chatHistories")) || {};
+      const savedChats = JSON.parse(localStorage.getItem(localKey("chats"))) || [];
+      const savedHistories = JSON.parse(localStorage.getItem(localKey("chatHistories"))) || {};
       setChats(savedChats);
       setOriginalChats(savedChats);
       setChatHistories(savedHistories);
@@ -58,21 +56,17 @@ export default function AllInterface() {
       }
 
       const data = await response.json();
-      
-      // Verificar que la respuesta tenga la estructura esperada
       if (!data.chats || !Array.isArray(data.chats)) {
         console.warn('Respuesta del backend no tiene formato esperado:', data);
         throw new Error('Formato de respuesta inválido');
       }
-      
-      // Transformar los datos del backend al formato que usa el frontend
+
       const transformedChats = data.chats.map(chat => ({
         id: chat._id,
         title: chat.question.slice(0, 20) + "..." || `Chat ${new Date(chat.createdAt).toLocaleDateString()}`,
         createdAt: chat.createdAt
       }));
 
-      // Construir historial de chats
       const histories = {};
       data.chats.forEach(chat => {
         if (!histories[chat._id]) {
@@ -85,7 +79,7 @@ export default function AllInterface() {
             timestamp: new Date(chat.createdAt).getTime()
           },
           {
-            role: "ia", 
+            role: "ia",
             text: chat.answer,
             timestamp: new Date(chat.createdAt).getTime() + 1000
           }
@@ -95,21 +89,18 @@ export default function AllInterface() {
       setChats(transformedChats);
       setOriginalChats(transformedChats);
       setChatHistories(histories);
-      
-      // Actualizar localStorage
-      localStorage.setItem("chats", JSON.stringify(transformedChats));
-      localStorage.setItem("chatHistories", JSON.stringify(histories));
-      
-      // Seleccionar el último chat si existe
+
+      localStorage.setItem(localKey("chats"), JSON.stringify(transformedChats));
+      localStorage.setItem(localKey("chatHistories"), JSON.stringify(histories));
+
       if (transformedChats.length > 0) {
         setActiveChat(transformedChats[transformedChats.length - 1].id);
       }
 
     } catch (error) {
       console.error('Error cargando chats desde backend:', error);
-      // Fallback a localStorage si falla la carga del backend
-      const savedChats = JSON.parse(localStorage.getItem("chats")) || [];
-      const savedHistories = JSON.parse(localStorage.getItem("chatHistories")) || {};
+      const savedChats = JSON.parse(localStorage.getItem(localKey("chats"))) || [];
+      const savedHistories = JSON.parse(localStorage.getItem(localKey("chatHistories"))) || {};
       setChats(savedChats);
       setOriginalChats(savedChats);
       setChatHistories(savedHistories);
@@ -117,7 +108,7 @@ export default function AllInterface() {
         setActiveChat(savedChats[savedChats.length - 1].id);
       }
     }
-  }, []);
+  }, [user]);
 
   const updateChatHistory = useCallback((chatId, message) => {
     setChatHistories(prev => {
@@ -125,10 +116,11 @@ export default function AllInterface() {
         ...prev,
         [chatId]: [...(prev[chatId] || []), message]
       };
-      localStorage.setItem("chatHistories", JSON.stringify(updated));
+      localStorage.setItem(localKey("chatHistories"), JSON.stringify(updated));
       return updated;
     });
-  }, []);
+  }, [user]);
+
 
   
   const streamIAResponse = async (question) => {

@@ -9,7 +9,6 @@ export default function Sidebar({
   activeChat,
   onSearch,
   onEditChatTitle,
-  onDeleteChat,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuOpenChatId, setMenuOpenChatId] = useState(null);
@@ -113,16 +112,6 @@ export default function Sidebar({
                     }}
                   >
                     Editar nombre
-                  </button>
-                  <button
-                    className="ai-chat-popup-item danger"
-                    onClick={() => {
-                      const confirmDelete = confirm("¿Seguro que deseas eliminar este chat?");
-                      if (confirmDelete) onDeleteChat(chat.id);
-                      setMenuOpenChatId(null);
-                    }}
-                  >
-                    Eliminar chat
                   </button>
                 </div>
               )}

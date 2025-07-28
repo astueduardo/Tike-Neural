@@ -95,6 +95,7 @@ const SuperDashboard = () => {
         await api.put(`/users/${editingUser.id}`, data);// Actualiza el usuario existente
         toast.success("Usuario actualizado");// Muestra mensaje de éxito
       } else {
+
         await api.post("/auth/register", form); // Crea un nuevo usuario
         toast.success("Usuario creado");// Muestra mensaje de éxito
       }
@@ -395,8 +396,10 @@ const SuperDashboard = () => {
                 <label htmlFor="role">Rol</label>
                 <select 
                   id="role"
+                  //pesto edita el rol de usuario existente
                   value={form.role} 
-                  onChange={(e) => setForm({ ...form, role: e.target.value })} 
+                  onChange={(e) => setForm({ ...form, role: e.target.value })}
+                  required 
                   className="form-select"
                 >
                   <option value="lector">Lector</option>
