@@ -114,6 +114,36 @@
   transform: scale(1.1);
 }
 
+.btn-chats {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary-color, #2563eb); /* coincide con btn-primary variable si existe */
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.12s ease;
+}
+
+.btn-chats:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-chats:hover:not(:disabled) {
+  background: var(--primary-color-dark, #1e40af);
+}
+
+.btn-chats .btn-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.5;
+}
+
 /* Estadísticas */
 .stats-container {
   display: flex;

@@ -95,7 +95,7 @@ export const AuthProvider = ({ children }) => {
         return false;
       }
     },
-    [user]
+    [user],
   );
 
   // Verificar si el usuario tiene un rol específico
@@ -104,7 +104,7 @@ export const AuthProvider = ({ children }) => {
       if (!user) return false;
       return user.role === role || user.roles?.includes(role);
     },
-    [user]
+    [user],
   );
 
   // Verificar estado de autenticación al montar
@@ -150,7 +150,7 @@ export const AuthProvider = ({ children }) => {
       checkAuthStatus,
       updateUser,
       hasRole,
-    ]
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

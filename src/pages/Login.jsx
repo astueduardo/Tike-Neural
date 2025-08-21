@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import api from "../api/axios.js";
 import { useNavigate, Link } from "react-router-dom";
 
-;
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -11,20 +10,17 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-
-
-
   const handleLogin = async (e) => {
     e.preventDefault();
     setEmailError("");
     setPasswordError("");
-    
+
     try {
-      const res = await api.post("/auth/login", { 
-        email, 
-        password 
+      const res = await api.post("/auth/login", {
+        email,
+        password,
       });
-    
+
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       navigate("/all-interface");
@@ -39,7 +35,9 @@ const Login = () => {
           setEmail("");
           setEmailError("Usuario no encontrado");
         } else {
-          setEmailError(err.response.data.message || "Ocurrió un error. Intenta más tarde.");
+          setEmailError(
+            err.response.data.message || "Ocurrió un error. Intenta más tarde.",
+          );
         }
       } else if (err.request) {
         setEmailError("Sin conexión al servidor. Verifica tu conexión.");
@@ -55,7 +53,7 @@ const Login = () => {
     <div className="login-bg">
       <img src="/public/el.png" alt="icon" className="icon" />
       <span className="logo">TIKÉE NEURAL </span>
-      
+
       <form onSubmit={handleLogin} className="form-container">
         <h2 className="text-2xl font-bold mb-6 text-center">Iniciar sesión</h2>
         <input
@@ -68,7 +66,9 @@ const Login = () => {
           autoComplete="username"
           className={`input-style ${emailError ? "error" : ""}`}
         />
-        {emailError && <div style={{ color: "red", marginBottom: 8 }}>{emailError}</div>}
+        {emailError && (
+          <div style={{ color: "red", marginBottom: 8 }}>{emailError}</div>
+        )}
         <input
           id="password"
           type="password"
@@ -79,7 +79,9 @@ const Login = () => {
           autoComplete="current-password"
           className={`input-style ${passwordError ? "error" : ""}`}
         />
-        {passwordError && <div style={{ color: "red", marginBottom: 8 }}>{passwordError}</div>}
+        {passwordError && (
+          <div style={{ color: "red", marginBottom: 8 }}>{passwordError}</div>
+        )}
         <button type="submit" className="button-green" disabled={loading}>
           {loading ? "Cargando..." : "Iniciar Sesión"}
         </button>
