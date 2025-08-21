@@ -104,7 +104,7 @@ export default function Sidebar({
   return (
     <aside className="ai-sidebar">
       <div className="ai-sidebar-title">
-        <img src="/el.png" alt="icon" />
+        <img src="el.png" alt="icon" />
         <span>Tikee Neural</span>
       </div>
 

@@ -51,7 +51,7 @@ const Login = () => {
 
   return (
     <div className="login-bg">
-      <img src="/public/el.png" alt="icon" className="icon" />
+      <img src="el.png" alt="icon" className="icon" />
       <span className="logo">TIKÉE NEURAL </span>
 
       <form onSubmit={handleLogin} className="form-container">
